@@ -44,7 +44,7 @@ body {
   background-color: #4caf50;
   color: white;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background-color 0.3s ease;
 }
 
 .join-screen button:hover {

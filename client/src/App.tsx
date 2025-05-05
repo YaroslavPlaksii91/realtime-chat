@@ -22,43 +22,41 @@ const socket = io('http://localhost:5000');
 const channels = ['general', 'tech', 'random'];
 
 function App() {
-  const [name, setName] = useState<string>('');
-  const [channel, setChannel] = useState<string>('');
-  const [msg, setMsg] = useState<string>('');
+  const [name, setName] = useState('');
+  const [channel, setChannel] = useState('');
+  const [msg, setMsg] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [isJoined, setIsJoined] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // console.log('socket', socket); 
+  useEffect(() => {
+    socket.on('message', (msg: Message) => {
+      setMessages(prev => [...prev, msg]);
+    });
 
-  // useEffect(() => {
-  //   socket.on('message', (msg: Message) => {
-  //     setMessages(prev => [...prev, msg]);
-  //   });
+    socket.on('selfMessage', (msg: Message) => {
+      setMessages(prev => [...prev, msg]);
+    });
 
-  //   socket.on('selfMessage', (msg: Message) => {
-  //     setMessages(prev => [...prev, msg]);
-  //   });
+    socket.on('userList', (users: string[]) => {
+      setOnlineUsers(users);
+    });
 
-  //   socket.on('userList', (users: string[]) => {
-  //     setOnlineUsers(users);
-  //   });
+    socket.on('typing', ({ name, isTyping }: TypingPayload) => {
+      setTypingUsers(prev => {
+        const exists = prev.includes(name);
+        if (isTyping && !exists) return [...prev, name];
+        if (!isTyping && exists) return prev.filter(n => n !== name);
+        return prev;
+      });
+    });
 
-  //   socket.on('typing', ({ name, isTyping }: TypingPayload) => {
-  //     setTypingUsers(prev => {
-  //       const exists = prev.includes(name);
-  //       if (isTyping && !exists) return [...prev, name];
-  //       if (!isTyping && exists) return prev.filter(n => n !== name);
-  //       return prev;
-  //     });
-  //   });
-
-  //   // return () => {
-  //   //   socket.disconnect();
-  //   // };
-  // }, []);
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const handleJoin = () => {
     if (!name || !channel) return;
@@ -69,7 +67,6 @@ function App() {
 
   const handleSend = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log('msg', msg);
     
     const trimmed = msg.trim();
     if (trimmed && trimmed.length <= 200) {
@@ -85,27 +82,27 @@ function App() {
     socket.emit('typing', value.length > 0);
   };
 
-  // if (!isJoined) {
-  //   return (
-  //     <div className="join-screen">
-  //       <h2>Join a Channel</h2>
-  //       <input
-  //         placeholder="Nickname"
-  //         onChange={(e) => setName(e.target.value)}
-  //       />
-  //       <select
-  //         onChange={(e) => setChannel(e.target.value)}
-  //         defaultValue=""
-  //       >
-  //         <option value="" disabled>Select Channel</option>
-  //         {channels.map(c => (
-  //           <option key={c} value={c}>{c}</option>
-  //         ))}
-  //       </select>
-  //       <button onClick={handleJoin}>Join</button>
-  //     </div>
-  //   );
-  // }
+  if (!isJoined) {
+    return (
+      <div className="join-screen">
+        <h2>Join a Channel</h2>
+        <input
+          placeholder="Nickname"
+          onChange={(e) => setName(e.target.value)}
+        />
+        <select
+          onChange={(e) => setChannel(e.target.value)}
+          defaultValue=""
+        >
+          <option value="" disabled>Select Channel</option>
+          {channels.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <button onClick={handleJoin}>Join</button>
+      </div>
+    );
+  }
 
   return (
     <div className="chat-container">
